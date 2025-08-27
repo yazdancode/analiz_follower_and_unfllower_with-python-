@@ -2,3 +2,5 @@
 .venv
 .env
 todo.txt
+*.pyc
+__pycache__
