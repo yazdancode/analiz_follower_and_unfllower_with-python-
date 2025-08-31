@@ -1,5 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 def create_inline_keyboard():
     keyboard = InlineKeyboardMarkup()
     btn1 = InlineKeyboardButton("عضویت در کانال 📢", url="https://t.me/yazdancodeo")
