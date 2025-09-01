@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, create_engine, Session
 from .models import User
 
-engine = create_engine("sqlite:///users.db")
+engine = create_engine("sqlite:///")
 
 
 def init_db():

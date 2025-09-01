@@ -1,13 +1,11 @@
-import telebot
-from decouple import config
-from db.database import init_db
+from telebot import TeleBot
 from bot.handlers import register_handlers
+from decouple import config
 
-TELEGRAM_TOKEN = config("TELEGRAM_TOKEN")
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+BOT_TOKEN = config("TELEGRAM_TOKEN")
+bot = TeleBot(BOT_TOKEN)
 
-init_db()
 register_handlers(bot)
 
-if __name__ == "__main__":
-    bot.polling(none_stop=True)
+print("Bot is running...")
+bot.infinity_polling()

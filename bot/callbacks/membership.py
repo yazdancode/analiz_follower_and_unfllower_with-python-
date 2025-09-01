@@ -6,10 +6,11 @@ from bot.enum import BotMessages
 from decouple import config
 
 CHANNEL_ID = config("CHANNEL_ID")
-ADMIN_CHAT_IDS = config("ADMIN_CHAT_IDS")
+ADMIN_CHAT_IDS = [5105508285]
 
 def confirm_membership(bot, call: CallbackQuery):
     chat_id = call.message.chat.id
+
     if chat_id in ADMIN_CHAT_IDS:
         is_member = True
     else:
