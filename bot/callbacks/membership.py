@@ -1,9 +1,10 @@
-from telebot.types import CallbackQuery
+from decouple import config
 from sqlmodel import select
+from telebot.types import CallbackQuery
+
+from bot.enum import BotMessages
 from db.database import get_session
 from db.models import User
-from bot.enum import BotMessages
-from decouple import config
 
 CHANNEL_ID = config("CHANNEL_ID")
 ADMIN_CHAT_IDS = [5105508285]
@@ -21,7 +22,6 @@ def confirm_membership(bot, call: CallbackQuery):
         except Exception:
             is_member = False
 
-    # استفاده از context manager با session درست
     with get_session() as session:
         existing_user = session.exec(
             select(User).where(User.chat_id == chat_id)

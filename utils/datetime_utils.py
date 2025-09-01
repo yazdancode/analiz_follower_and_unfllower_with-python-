@@ -1,5 +1,6 @@
-import jdatetime
 from datetime import datetime
+
+import jdatetime
 
 
 def now_iso():

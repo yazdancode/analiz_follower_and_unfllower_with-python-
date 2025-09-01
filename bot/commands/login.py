@@ -1,8 +1,9 @@
-from telebot.types import Message
 from sqlmodel import select
+from telebot.types import Message
+
+from bot.enum import BotMessages
 from db.database import get_session
 from db.models import User
-from bot.enum import BotMessages
 
 
 def login_command(bot, message: Message):

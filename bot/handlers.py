@@ -1,17 +1,17 @@
+from instagrapi import Client
+from sqlmodel import select
 from telebot import TeleBot
 from telebot.types import Message
-from sqlmodel import select
-from db.database import get_session
-from db.models import User
-from bot.messages.start import start_handler
-from bot.commands.login import login_command
+
 from bot.callbacks.membership import confirm_membership
 from bot.commands.connect import connect_instagram, pending_2fa
-from instagrapi import Client
+from bot.commands.login import login_command
+from bot.messages.start import start_handler
+from db.database import get_session
+from db.models import User
 
 
 def register_handlers(bot: TeleBot):
-
     # /start
     @bot.message_handler(commands=["start"])
     def handle_start(message):
@@ -47,7 +47,7 @@ def register_handlers(bot: TeleBot):
                 cl.dump_settings(f"sessions/{user.chat_id}.json")
                 bot.send_message(
                     chat_id,
-                    f"✅ اینستاگرام شما با موفقیت متصل شد!\nیوزرنیم: {user.username}",
+                    f"✅ اینستاگرام شما با موفقیت متصل شد!\nیوزرنیم: {user.chat_id}",
                 )
             except Exception as e:
                 bot.send_message(
@@ -56,7 +56,6 @@ def register_handlers(bot: TeleBot):
             finally:
                 pending_2fa.pop(chat_id, None)
 
-    # catch-all برای پیام‌های معمولی
     @bot.message_handler(func=lambda m: True)
     def handle_message(message):
         if message.text.startswith("/"):

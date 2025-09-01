@@ -1,6 +1,7 @@
-from sqlmodel import SQLModel, Field
 from datetime import datetime
 from typing import Optional
+
+from sqlmodel import Field, SQLModel
 
 
 def now_iso():

@@ -5,3 +5,5 @@ todo.txt
 *.pyc
 __pycache__
 *.db
+*.yaml
+*.json
