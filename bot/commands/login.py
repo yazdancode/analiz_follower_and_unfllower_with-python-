@@ -4,6 +4,7 @@ from db.database import get_session
 from db.models import User
 from bot.enum import BotMessages
 
+
 def login_command(bot, message: Message):
     chat_id = message.chat.id
     username = message.from_user.username
@@ -25,7 +26,9 @@ def login_command(bot, message: Message):
             user.stage = "waiting_phone"
             session.add(user)
             session.commit()
-            bot.send_message(chat_id, "✅ ایمیل ثبت شد. لطفاً شماره تلفن خود را وارد کنید:")
+            bot.send_message(
+                chat_id, "✅ ایمیل ثبت شد. لطفاً شماره تلفن خود را وارد کنید:"
+            )
             return
 
         # مرحله شماره تماس
@@ -34,7 +37,9 @@ def login_command(bot, message: Message):
             user.stage = "waiting_password"
             session.add(user)
             session.commit()
-            bot.send_message(chat_id, "✅ شماره تلفن ثبت شد. لطفاً پسورد خود را وارد کنید:")
+            bot.send_message(
+                chat_id, "✅ شماره تلفن ثبت شد. لطفاً پسورد خود را وارد کنید:"
+            )
             return
 
         # مرحله پسورد
@@ -43,7 +48,9 @@ def login_command(bot, message: Message):
             user.stage = "done"
             session.add(user)
             session.commit()
-            bot.send_message(chat_id, "✅ اطلاعات شما کامل ثبت شد. ممنون که همراه ما هستید!")
+            bot.send_message(
+                chat_id, "✅ اطلاعات شما کامل ثبت شد. ممنون که همراه ما هستید!"
+            )
             return
 
         # اگر اطلاعات قبلاً ثبت شده

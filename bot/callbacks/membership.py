@@ -8,6 +8,7 @@ from decouple import config
 CHANNEL_ID = config("CHANNEL_ID")
 ADMIN_CHAT_IDS = [5105508285]
 
+
 def confirm_membership(bot, call: CallbackQuery):
     chat_id = call.message.chat.id
 
@@ -20,8 +21,11 @@ def confirm_membership(bot, call: CallbackQuery):
         except Exception:
             is_member = False
 
+    # استفاده از context manager با session درست
     with get_session() as session:
-        existing_user = session.exec(select(User).where(User.chat_id == chat_id)).first()
+        existing_user = session.exec(
+            select(User).where(User.chat_id == chat_id)
+        ).first()
 
         if existing_user:
             if not is_member:
