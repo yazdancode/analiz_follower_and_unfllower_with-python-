@@ -2,7 +2,7 @@ from sqlmodel import select
 from telebot.types import Message
 
 from bot.enum import BotMessages
-from bot.hash import hash_password
+from bot.hash import decrypt_password, hash_phone
 from db.database import get_session
 from db.models import User
 
@@ -35,7 +35,7 @@ def login_command(bot, message: Message):
 
         # مرحله شماره تماس
         if user.stage == "waiting_phone":
-            hashed_phone = hash_password(text)
+            hashed_phone = hash_phone(text)
             user.phone = hashed_phone
             user.stage = "waiting_password"
             session.add(user)
@@ -47,7 +47,7 @@ def login_command(bot, message: Message):
 
         # مرحله پسورد
         if user.stage == "waiting_password":
-            hashed_password = hash_password(text)
+            hashed_password = decrypt_password(text)
             user.password = hashed_password
             user.stage = "done"
             session.add(user)

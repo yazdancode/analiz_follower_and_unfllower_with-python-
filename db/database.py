@@ -12,10 +12,6 @@ def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
 
-# فراخوانی برای ایجاد جداول هنگام import
-create_db_and_tables()
-
-
 def get_session():
     """یک session جدید برای دیتابیس برمی‌گرداند"""
     return Session(engine)

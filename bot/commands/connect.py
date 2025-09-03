@@ -31,6 +31,8 @@ def connect_instagram(bot, message: Message):
         cl.load_settings(session_file)
 
     try:
+        print("📥 Email from DB:", user.email)
+        print("🔑 Password from DB:", user.password)
         cl.login(user.email, user.password)
         bot.send_message(
             chat_id, BotMessages.CONNECTED.value.format(username=user.username)
