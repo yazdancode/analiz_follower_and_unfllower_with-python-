@@ -61,18 +61,12 @@ def login_command(bot, message: Message):
             if len(password) < 14:
                 bot.send_message(chat_id, "❌ پسورد باید حداقل 14 کاراکتر باشد.")
                 return
-            # if not re.search(r"[A-Z]", password):
-            #     bot.send_message(chat_id, "❌ پسورد باید حداقل یک حرف بزرگ داشته باشد.")
-            #     return
             if not re.search(r"[a-z]", password):
                 bot.send_message(chat_id, "❌ پسورد باید حداقل یک حرف کوچک داشته باشد.")
                 return
             if not re.search(r"\d", password):
                 bot.send_message(chat_id, "❌ پسورد باید حداقل یک عدد داشته باشد.")
                 return
-            # if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", password):
-            #     bot.send_message(chat_id, "❌ پسورد باید حداقل یک کاراکتر ویژه داشته باشد.")
-            #     return
             user.password = password
             user.stage = "done"
             session.add(user)

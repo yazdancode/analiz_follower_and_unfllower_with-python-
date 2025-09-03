@@ -10,7 +10,6 @@ from bot.enum import BotMessages
 from db.database import get_session
 from db.models import User
 
-# نگه‌داری کلاینت‌های در انتظار Two-Factor
 pending_2fa = {}
 
 
