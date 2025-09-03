@@ -1,12 +1,26 @@
 from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
-from bot.commands.connect import connect_instagram
-from bot.commands.login import login_command
+from bot.messages.connect_instagram_handler import connect_instagram
+from bot.messages.login_handler import login_command
 from bot.messages.start import start_handler
 
 
 def register_handlers(bot: TeleBot):
+    """
+    ثبت هندلرهای پیام و کال‌بک برای ربات تلگرام.
+
+    Args:
+        bot (TeleBot): شیء ربات تلگرام برای مدیریت پیام‌ها و کال‌بک‌ها.
+
+    هندلرهای ثبت‌شده:
+        - /start: شروع تعامل با ربات و ارسال پیام خوش‌آمدگویی.
+        - /login: آغاز فرآیند ورود کاربر به اینستاگرام.
+        - /connect: اتصال به حساب اینستاگرام با اطلاعات ذخیره‌شده.
+        - تایید عضویت: بررسی عضویت کاربر در کانال تلگرام.
+        - پیام‌های متنی غیر دستوری: هدایت به فرآیند ورود در صورت نیاز.
+    """
+
     # /start
     @bot.message_handler(commands=["start"])
     def handle_start(message):

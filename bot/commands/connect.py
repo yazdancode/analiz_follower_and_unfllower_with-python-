@@ -4,7 +4,6 @@ import time
 
 from instagrapi import Client
 from sqlmodel import select
-from telebot.types import Message
 
 from bot.enum import BotMessages
 from db.database import get_session
@@ -14,11 +13,31 @@ pending_2fa = {}
 
 
 def get_user_from_db(chat_id):
+    """
+    دریافت شیء کاربر از پایگاه داده بر اساس chat_id تلگرام.
+
+    Args:
+        chat_id (int): شناسه چت کاربر در تلگرام.
+
+    Returns:
+        User | None: شیء کاربر اگر پیدا شود، در غیر این صورت None.
+    """
     with get_session() as session:
         return session.exec(select(User).where(User.chat_id == chat_id)).first()
 
 
 def send_login_stage_messages(bot, chat_id, user):
+    """
+    بررسی وضعیت ثبت‌نام کاربر و ارسال پیام مناسب در صورت ناقص بودن اطلاعات.
+
+    Args:
+        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
+        chat_id (int): شناسه چت کاربر.
+        user (User | None): شیء کاربر از پایگاه داده.
+
+    Returns:
+        bool: اگر اطلاعات کاربر کامل باشد True، در غیر این صورت False.
+    """
     if not user:
         bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
         return False
@@ -29,6 +48,16 @@ def send_login_stage_messages(bot, chat_id, user):
 
 
 def setup_instagram_client(user, proxy=None):
+    """
+    راه‌اندازی کلاینت instagrapi برای اتصال به اینستاگرام با تنظیمات کاربر.
+
+    Args:
+        user (User): شیء کاربر شامل اطلاعات لاگین و یوزرنیم.
+        proxy (str | None): آدرس پراکسی در صورت نیاز به استفاده.
+
+    Returns:
+        tuple[Client, str]: شیء کلاینت instagrapi و مسیر فایل session مربوط به کاربر.
+    """
     cl = Client()
     if proxy:
         cl.set_proxy(proxy)
@@ -44,6 +73,23 @@ def setup_instagram_client(user, proxy=None):
 
 
 def handle_login_and_profile(bot, chat_id, cl, user, session_file):
+    """
+    ورود به حساب اینستاگرام کاربر و ارسال اطلاعات پروفایل به تلگرام.
+
+    مراحل:
+    - ورود به حساب با ایمیل و پسورد ذخیره‌شده
+    - ذخیره تنظیمات نشست در فایل مربوطه
+    - ارسال پیام اتصال موفق با یوزرنیم
+    - دریافت اطلاعات پروفایل از اینستاگرام
+    - ارسال جزئیات پروفایل (نام، تعداد پست، دنبال‌کننده، دنبال‌شونده)
+
+    Args:
+        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
+        chat_id (int): شناسه چت کاربر در تلگرام.
+        cl (Client): کلاینت instagrapi برای اتصال به اینستاگرام.
+        user (User): شیء کاربر شامل اطلاعات لاگین.
+        session_file (str): مسیر فایل تنظیمات نشست برای ذخیره‌سازی.
+    """
     cl.login(user.email, user.password)
     cl.dump_settings(session_file)
 
@@ -51,7 +97,7 @@ def handle_login_and_profile(bot, chat_id, cl, user, session_file):
         chat_id, BotMessages.CONNECTED.value.format(username=user.username)
     )
 
-    time.sleep(random.uniform(2, 5))  # تأخیر طبیعی
+    time.sleep(random.uniform(2, 5))
 
     profile = cl.user_info_by_username(user.username.lower())
     bot.send_message(
@@ -62,10 +108,24 @@ def handle_login_and_profile(bot, chat_id, cl, user, session_file):
         f"👤 دنبال‌شونده‌ها: {profile.following_count}",
     )
 
-    time.sleep(random.uniform(10, 30))  # تأخیر طبیعی دوم
+    time.sleep(random.uniform(10, 30))
 
 
 def handle_login_errors(bot, chat_id, e, cl):
+    """
+    مدیریت خطاهای مربوط به ورود به اینستاگرام و ارسال پیام مناسب به کاربر.
+
+    Args:
+        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
+        chat_id (int): شناسه چت کاربر در تلگرام.
+        e (Exception): شیء خطا دریافت‌شده از instagrapi.
+        cl (Client): کلاینت instagrapi برای ذخیره در pending_2fa در صورت نیاز.
+
+    رفتار:
+        - اگر خطا مربوط به تأیید دو مرحله‌ای باشد، پیام مناسب ارسال شده و کلاینت در pending_2fa ذخیره می‌شود.
+        - اگر خطا مربوط به بلاک شدن آی‌پی یا نیاز به فیسبوک باشد، پیام راه‌حل ارسال می‌شود.
+        - در سایر موارد، پیام خطای عمومی با جزئیات ارسال می‌شود.
+    """
     error_msg = str(e)
 
     if "Two-factor authentication required" in error_msg:
@@ -79,18 +139,3 @@ def handle_login_errors(bot, chat_id, e, cl):
         bot.send_message(
             chat_id, BotMessages.CONNECT_FAILED.value.format(error=error_msg)
         )
-
-
-def connect_instagram(bot, message: Message, proxy: str | None = None):
-    chat_id = message.chat.id
-    user = get_user_from_db(chat_id)
-
-    if not send_login_stage_messages(bot, chat_id, user):
-        return
-
-    cl, session_file = setup_instagram_client(user, proxy)
-
-    try:
-        handle_login_and_profile(bot, chat_id, cl, user, session_file)
-    except Exception as e:
-        handle_login_errors(bot, chat_id, e, cl)
