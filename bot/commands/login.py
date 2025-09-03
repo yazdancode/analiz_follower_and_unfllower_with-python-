@@ -1,8 +1,9 @@
+import re
+
 from sqlmodel import select
 from telebot.types import Message
 
 from bot.enum import BotMessages
-from bot.hash import decrypt_password, hash_phone
 from db.database import get_session
 from db.models import User
 
@@ -10,7 +11,7 @@ from db.models import User
 def login_command(bot, message: Message):
     chat_id = message.chat.id
     username = message.from_user.username
-    text = message.text
+    text = message.text.strip()
 
     with get_session() as session:
         user = session.exec(select(User).where(User.chat_id == chat_id)).first()
@@ -18,13 +19,19 @@ def login_command(bot, message: Message):
             bot.send_message(chat_id, "❌ ابتدا باید عضو کانال شوید و /start را بزنید.")
             return
 
-        # ثبت یوزرنیم تلگرام
-        if not user.username:
+        # ثبت یوزرنیم تلگرام اگر خالی است
+        if not user.username and username:
             user.username = username
+            session.add(user)
+            session.commit()
 
         # مرحله ایمیل
         if user.stage == "waiting_email":
-            user.email = text
+            email = text
+            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                bot.send_message(chat_id, "❌ ایمیل معتبر وارد کنید.")
+                return
+            user.email = email
             user.stage = "waiting_phone"
             session.add(user)
             session.commit()
@@ -35,8 +42,11 @@ def login_command(bot, message: Message):
 
         # مرحله شماره تماس
         if user.stage == "waiting_phone":
-            hashed_phone = hash_phone(text)
-            user.phone = hashed_phone
+            phone = text
+            if not (phone.isdigit() and len(phone) == 11):
+                bot.send_message(chat_id, "❌ شماره تلفن معتبر وارد کنید (11 رقم).")
+                return
+            user.phone = phone
             user.stage = "waiting_password"
             session.add(user)
             session.commit()
@@ -47,8 +57,23 @@ def login_command(bot, message: Message):
 
         # مرحله پسورد
         if user.stage == "waiting_password":
-            hashed_password = decrypt_password(text)
-            user.password = hashed_password
+            password = text
+            if len(password) < 14:
+                bot.send_message(chat_id, "❌ پسورد باید حداقل 14 کاراکتر باشد.")
+                return
+            # if not re.search(r"[A-Z]", password):
+            #     bot.send_message(chat_id, "❌ پسورد باید حداقل یک حرف بزرگ داشته باشد.")
+            #     return
+            if not re.search(r"[a-z]", password):
+                bot.send_message(chat_id, "❌ پسورد باید حداقل یک حرف کوچک داشته باشد.")
+                return
+            if not re.search(r"\d", password):
+                bot.send_message(chat_id, "❌ پسورد باید حداقل یک عدد داشته باشد.")
+                return
+            # if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", password):
+            #     bot.send_message(chat_id, "❌ پسورد باید حداقل یک کاراکتر ویژه داشته باشد.")
+            #     return
+            user.password = password
             user.stage = "done"
             session.add(user)
             session.commit()
@@ -56,7 +81,5 @@ def login_command(bot, message: Message):
                 chat_id, "✅ اطلاعات شما کامل ثبت شد. ممنون که همراه ما هستید!"
             )
             return
-
-        # اگر اطلاعات قبلاً ثبت شده
         if user.stage == "done":
             bot.send_message(chat_id, BotMessages.ALREADY_DONE.value)
