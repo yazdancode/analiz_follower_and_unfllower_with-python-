@@ -3,10 +3,6 @@ from datetime import datetime
 import jdatetime
 
 
-def now_iso():
-    return datetime.now()
-
-
 def iso_to_persian(iso_dt: datetime):
     dt = jdatetime.datetime.fromgregorian(datetime=iso_dt)
     weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یکشنبه"]
