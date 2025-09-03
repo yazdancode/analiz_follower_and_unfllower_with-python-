@@ -43,16 +43,22 @@ def register_handlers(bot: TeleBot):
             user = session.exec(select(User).where(User.chat_id == chat_id)).first()
 
             try:
+                cl.set_user_agent(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                )
+                cl.timeout = 30
                 cl.login(user.email, user.password, verification_code=verification_code)
                 cl.dump_settings(f"sessions/{user.chat_id}.json")
+                instagram_username = cl.username
                 bot.send_message(
                     chat_id,
-                    f"✅ اینستاگرام شما با موفقیت متصل شد!\nیوزرنیم: {user.chat_id}",
+                    f"✅ اینستاگرام شما با موفقیت متصل شد!\nیوزرنیم: {instagram_username}",
                 )
             except Exception as e:
-                bot.send_message(
-                    chat_id, f"❌ ورود با کد تایید دو مرحله‌ای موفق نبود:\n{e}"
-                )
+                error_msg = f"❌ اتصال به اینستاگرام موفق نبود:\n{str(e)}"
+                if "10061" in str(e):
+                    error_msg += "\n\n⚠️ مشکل اتصال به اینترنت یا فایروال دارید"
+                bot.send_message(chat_id, error_msg)
             finally:
                 pending_2fa.pop(chat_id, None)
 
