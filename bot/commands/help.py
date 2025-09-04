@@ -5,17 +5,15 @@ def help_handler(bot, message: Message):
     """
     هندلر دستور /help برای ربات تلگرام.
 
-    این تابع زمانی اجرا می‌شود که کاربر دستور /help را بفرستد
-    و یک پیام راهنما شامل دستورات قابل استفاده در ربات برای او ارسال می‌کند.
-
-    :param bot: شیء TeleBot برای ارسال پیام و ارتباط با API تلگرام.
-    :param message: شیء Message که پیام ورودی کاربر را نشان می‌دهد.
-    :return: None
+    پیام راهنما را با فرمت HTML (بدون CSS) برای کاربر ارسال می‌کند.
     """
-    bot.reply_to(
-        message,
-        "دستورات موجود:\n"
-        "/start - شروع کار با ربات\n"
-        "/login - ورود به ربات\n"
-        "/connect - اتصال به اینستاگرام\n",
+    text = (
+        "<b>📖 راهنمای ربات</b>\n"
+        "<u>دستورات موجود:</u>\n\n"
+        "• <code>/start</code> — شروع کار با ربات\n"
+        "• <code>/login</code> — ورود به حساب کاربری\n"
+        "• <code>/connect</code> — اتصال به اینستاگرام\n"
+        "• <code>/help</code> — نمایش همین راهنما\n"
     )
+
+    bot.reply_to(message, text, parse_mode="HTML")

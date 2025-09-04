@@ -47,7 +47,7 @@ def send_login_stage_messages(bot, chat_id, user):
     return True
 
 
-def setup_instagram_client(user, proxy=None):
+def setup_instagram_client(user, proxy: str | None = None):
     """
     راه‌اندازی کلاینت instagrapi برای اتصال به اینستاگرام با تنظیمات کاربر.
 
@@ -59,15 +59,24 @@ def setup_instagram_client(user, proxy=None):
         tuple[Client, str]: شیء کلاینت instagrapi و مسیر فایل session مربوط به کاربر.
     """
     cl = Client()
+
     if proxy:
         cl.set_proxy(proxy)
 
+    # ساخت پوشه جلسات
     os.makedirs("sessions", exist_ok=True)
-    username = user.username or f"user_{user.chat_id}"
-    session_file = f"sessions/{username.lower()}.json"
 
+    # تعیین نام فایل جلسه برای کاربر
+    username = (user.username or f"user_{user.chat_id}").strip().lower()
+    safe_username = "".join(c for c in username if c.isalnum() or c in ("_", "-"))
+    session_file = f"sessions/{safe_username}.json"
+
+    # اگر قبلاً جلسه‌ای وجود داشت، بارگذاری شود
     if os.path.exists(session_file):
         cl.load_settings(session_file)
+    else:
+        # ایجاد فایل تنظیمات اولیه
+        cl.dump_settings(session_file)
 
     return cl, session_file
 

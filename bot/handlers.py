@@ -18,8 +18,9 @@ def register_handlers(bot: TeleBot):
         - /start: شروع تعامل با ربات و ارسال پیام خوش‌آمدگویی.
         - /login: آغاز فرآیند ورود کاربر به اینستاگرام.
         - /connect: اتصال به حساب اینستاگرام با اطلاعات ذخیره‌شده.
+        - /help: نمایش راهنمای دستورات.
         - تایید عضویت: بررسی عضویت کاربر در کانال تلگرام.
-        - پیام‌های متنی غیر دستوری: هدایت به فرآیند ورود در صورت نیاز.
+        - پیام‌های متنی غیر دستوری: هدایت به فرآیند ورود یا نمایش پیام پیش‌فرض.
     """
 
     # /start
@@ -37,8 +38,9 @@ def register_handlers(bot: TeleBot):
     def handle_connect(message):
         connect_instagram(bot, message)
 
+    # /help
     @bot.message_handler(commands=["help"])
-    def helps(message):
+    def handle_help(message):
         help_handler(bot, message)
 
     # تایید عضویت
@@ -46,8 +48,14 @@ def register_handlers(bot: TeleBot):
     def handle_membership(call):
         confirm_membership(bot, call)
 
+    # پیام‌های ناشناخته یا متنی
     @bot.message_handler(func=lambda m: True)
     def handle_message(message):
-        if message.text.startswith("/"):
+        if not message.text:  # جلوگیری از خطا در پیام‌های غیرمتنی
             return
+
+        if message.text.startswith("/"):
+            return  # دستور ناشناخته → فعلاً نادیده گرفته می‌شود
+
+        # پیام متنی معمولی → هدایت به ورود
         login_command(bot, message)
