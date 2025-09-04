@@ -1,6 +1,7 @@
 from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
+from bot.commands.help import help_handler
 from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.start import start_handler
@@ -35,6 +36,10 @@ def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["connect"])
     def handle_connect(message):
         connect_instagram(bot, message)
+
+    @bot.message_handler(commands=["help"])
+    def helps(message):
+        help_handler(bot, message)
 
     # تایید عضویت
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
