@@ -1,4 +1,7 @@
+import os
+
 from decouple import config
+from dotenv import load_dotenv
 from sqlmodel import select
 from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery
@@ -8,7 +11,8 @@ from db.database import get_session
 from db.models import User
 
 CHANNEL_ID = config("CHANNEL_ID")
-ADMIN_CHAT_IDS = [5105508285]
+load_dotenv()
+ADMIN_CHAT_IDS = int(os.environ.get("ADMIN_CHAT_IDS"))
 
 
 def check_membership(bot, chat_id):

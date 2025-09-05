@@ -26,7 +26,7 @@ def connect_instagram(bot, message: Message, proxy: str | None = None):
         5. در صورت بروز خطا، مدیریت آن با ارسال پیام مناسب به کاربر.
     """
     chat_id = message.chat.id
-    user = get_user_from_db(chat_id)
+    user = get_user_from_db(bot, chat_id)
 
     if not send_login_stage_messages(bot, chat_id, user):
         return
