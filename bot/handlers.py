@@ -1,8 +1,8 @@
 from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
+from bot.commands.connect import get_user_from_db
 from bot.commands.help import help_handler
-from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.start import start_handler
 
@@ -36,7 +36,8 @@ def register_handlers(bot: TeleBot):
     # /connect
     @bot.message_handler(commands=["connect"])
     def handle_connect(message):
-        connect_instagram(bot, message)
+        chat_id = message.chat.id
+        get_user_from_db(bot, chat_id)
 
     # /help
     @bot.message_handler(commands=["help"])

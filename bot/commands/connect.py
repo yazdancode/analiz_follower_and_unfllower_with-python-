@@ -3,6 +3,7 @@ import random
 import time
 
 from instagrapi import Client
+from instagrapi.exceptions import BadPassword, LoginRequired
 from sqlmodel import select
 
 from bot.enum import BotMessages
@@ -12,31 +13,23 @@ from db.models import User
 pending_2fa = {}
 
 
-def get_user_from_db(chat_id):
+def get_user_from_db(bot, chat_id, proxy: str | None = None):
     """
-    دریافت شیء کاربر از پایگاه داده بر اساس chat_id تلگرام.
-
-    Args:
-        chat_id (int): شناسه چت کاربر در تلگرام.
-
-    Returns:
-        User | None: شیء کاربر اگر پیدا شود، در غیر این صورت None.
+    دریافت شیء کاربر از پایگاه داده بر اساس chat_id تلگرام و ورود به اینستاگرام.
     """
-    with get_session() as session:
-        return session.exec(select(User).where(User.chat_id == chat_id)).first()
+    with get_session() as db_session:
+        user = db_session.exec(select(User).where(User.chat_id == chat_id)).first()
+        if not user:
+            bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
+            return
+
+        cl, session_file = setup_instagram_client(user, proxy)
+        handle_login_and_profile(bot, chat_id, cl, user, session_file, db_session)
 
 
 def send_login_stage_messages(bot, chat_id, user):
     """
     بررسی وضعیت ثبت‌نام کاربر و ارسال پیام مناسب در صورت ناقص بودن اطلاعات.
-
-    Args:
-        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
-        chat_id (int): شناسه چت کاربر.
-        user (User | None): شیء کاربر از پایگاه داده.
-
-    Returns:
-        bool: اگر اطلاعات کاربر کامل باشد True، در غیر این صورت False.
     """
     if not user:
         bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
@@ -50,22 +43,17 @@ def send_login_stage_messages(bot, chat_id, user):
 def setup_instagram_client(user, proxy: str | None = None):
     """
     راه‌اندازی کلاینت instagrapi برای اتصال به اینستاگرام با تنظیمات کاربر.
-
-    Args:
-        user (User): شیء کاربر شامل اطلاعات لاگین و یوزرنیم.
-        proxy (str | None): آدرس پراکسی در صورت نیاز به استفاده.
-
-    Returns:
-        tuple[Client, str]: شیء کلاینت instagrapi و مسیر فایل session مربوط به کاربر.
     """
     cl = Client()
 
     if proxy:
         cl.set_proxy(proxy)
+
     os.makedirs("sessions", exist_ok=True)
     username = (user.username or f"user_{user.chat_id}").strip().lower()
     safe_username = "".join(c for c in username if c.isalnum() or c in ("_", "-"))
     session_file = f"sessions/{safe_username}.json"
+
     if os.path.exists(session_file):
         cl.load_settings(session_file)
     else:
@@ -74,60 +62,79 @@ def setup_instagram_client(user, proxy: str | None = None):
     return cl, session_file
 
 
-def handle_login_and_profile(bot, chat_id, cl, user, session_file):
+def handle_login_and_profile(bot, chat_id, cl, user, session_file, db_session):
     """
     ورود به حساب اینستاگرام کاربر و ارسال اطلاعات پروفایل به تلگرام.
-
-    مراحل:
-    - ورود به حساب با ایمیل و پسورد ذخیره‌شده
-    - ذخیره تنظیمات نشست در فایل مربوطه
-    - ارسال پیام اتصال موفق با یوزرنیم
-    - دریافت اطلاعات پروفایل از اینستاگرام
-    - ارسال جزئیات پروفایل (نام، تعداد پست، دنبال‌کننده، دنبال‌شونده)
-
-    Args:
-        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
-        chat_id (int): شناسه چت کاربر در تلگرام.
-        cl (Client): کلاینت instagrapi برای اتصال به اینستاگرام.
-        user (User): شیء کاربر شامل اطلاعات لاگین.
-        session_file (str): مسیر فایل تنظیمات نشست برای ذخیره‌سازی.
     """
-    cl.login(user.email, user.password)
-    cl.dump_settings(session_file)
-    account = cl.account_info()
-    insta_username = account.username
-    bot.send_message(
-        chat_id, BotMessages.CONNECTED.value.format(username=insta_username)
-    )
+    try:
+        cl.login(user.email, user.password)
+        cl.dump_settings(session_file)
 
-    time.sleep(random.uniform(2, 5))
+        account = cl.account_info()
+        insta_username = account.username
 
-    profile = cl.user_info_by_username(insta_username.lower())
-    bot.send_message(
-        chat_id,
-        f"👤 نام کامل: {profile.full_name}\n"
-        f"📸 تعداد پست‌ها: {profile.media_count}\n"
-        f"👥 دنبال‌کننده‌ها: {profile.follower_count}\n"
-        f"👤 دنبال‌شونده‌ها: {profile.following_count}",
-    )
+        bot.send_message(
+            chat_id, BotMessages.CONNECTED.value.format(username=insta_username)
+        )
 
-    time.sleep(random.uniform(10, 30))
+        time.sleep(random.uniform(2, 5))
+
+        profile = cl.user_info_by_username(insta_username.lower())
+        bot.send_message(
+            chat_id,
+            f"👤 نام کامل: {profile.full_name}\n"
+            f"📸 تعداد پست‌ها: {profile.media_count}\n"
+            f"👥 دنبال‌کننده‌ها: {profile.follower_count}\n"
+            f"👤 دنبال‌شونده‌ها: {profile.following_count}",
+        )
+
+        time.sleep(random.uniform(10, 30))
+        return None
+
+    except BadPassword:
+        bot.send_message(chat_id, BotMessages.PASSWORD_CHANGED.value)
+        user.stage = "ASK_NEW_PASSWORD"
+        db_session.add(user)
+        db_session.commit()
+        return "ASK_NEW_PASSWORD"
+
+    except LoginRequired:
+        bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
+        return None
+
+    except Exception as e:
+        handle_login_errors(bot, chat_id, e, cl)
+        return None
+
+
+def on_new_password(bot, chat_id, cl, user, session_file, db_session, password):
+    """
+    وقتی کاربر پسورد جدید رو فرستاد، این تابع صدا زده میشه.
+    """
+    try:
+        cl.login(user.email, password)
+        cl.dump_settings(session_file)
+
+        # آپدیت پسورد و وضعیت
+        user.password = password
+        user.stage = "done"
+        db_session.add(user)
+        db_session.commit()
+
+        account = cl.account_info()
+        insta_username = account.username
+
+        bot.send_message(
+            chat_id, BotMessages.CONNECTED.value.format(username=insta_username)
+        )
+
+    except Exception as e:
+        handle_login_errors(bot, chat_id, e, cl)
 
 
 def handle_login_errors(bot, chat_id, e, cl):
     """
     مدیریت خطاهای مربوط به ورود به اینستاگرام و ارسال پیام مناسب به کاربر.
-
-    Args:
-        bot (TeleBot): شیء ربات تلگرام برای ارسال پیام.
-        chat_id (int): شناسه چت کاربر در تلگرام.
-        e (Exception): شیء خطا دریافت‌شده از instagrapi.
-        cl (Client): کلاینت instagrapi برای ذخیره در pending_2fa در صورت نیاز.
-
-    رفتار:
-        - اگر خطا مربوط به تأیید دو مرحله‌ای باشد، پیام مناسب ارسال شده و کلاینت در pending_2fa ذخیره می‌شود.
-        - اگر خطا مربوط به بلاک شدن آی‌پی یا نیاز به فیسبوک باشد، پیام راه‌حل ارسال می‌شود.
-        - در سایر موارد، پیام خطای عمومی با جزئیات ارسال می‌شود.
     """
     error_msg = str(e)
 
