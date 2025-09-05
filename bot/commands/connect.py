@@ -20,17 +20,23 @@ ADMIN_CHAT_IDS = int(os.environ.get("ADMIN_CHAT_IDS"))
 
 def get_user_from_db(bot, chat_id, proxy: str | None = None):
     """
-    دریافت شیء کاربر از پایگاه داده بر اساس chat_id تلگرام و ورود به اینستاگرام.
+    دریافت شیء کاربر از پایگاه داده بر اساس chat_id تلگرام
+    و آماده‌سازی کلاینت اینستاگرام.
     """
     with get_session() as db_session:
-        user = db_session.exec(select(User).where(User.chat_id == chat_id)).first()
-        print(user)
+        user = db_session.exec(select(User).where(User.chat_id == int(chat_id))).first()
+
         if not user:
             bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
-            return
+            return None, None, None
 
         cl, session_file = setup_instagram_client(user, proxy)
-        handle_login_and_profile(bot, chat_id, cl, user, session_file, db_session)
+
+        if not cl:
+            bot.send_message(chat_id, BotMessages.LOGIN_REQUIRED.value)
+            return None, None, None
+
+        return cl, session_file, user
 
 
 def send_login_stage_messages(bot, chat_id, user):
@@ -48,24 +54,35 @@ def send_login_stage_messages(bot, chat_id, user):
 
 def setup_instagram_client(user, proxy: str | None = None):
     """
-    راه‌اندازی کلاینت instagrapi برای اتصال به اینستاگرام با تنظیمات کاربر.
+    راه‌اندازی کلاینت instagrapi برای اتصال به اینستاگرام با مدیریت سشن.
     """
     cl = Client()
-
     if proxy:
         cl.set_proxy(proxy)
 
     os.makedirs("sessions", exist_ok=True)
+
     username = (user.username or f"user_{user.chat_id}").strip().lower()
     safe_username = "".join(c for c in username if c.isalnum() or c in ("_", "-"))
     session_file = f"sessions/{safe_username}.json"
 
-    if os.path.exists(session_file):
-        cl.load_settings(session_file)
-    else:
-        cl.dump_settings(session_file)
+    try:
+        if os.path.exists(session_file):
+            cl.load_settings(session_file)
+            try:
+                cl.get_timeline_feed()  # تست سشن
+            except LoginRequired:
+                cl.login(user.email, user.password)
+                cl.dump_settings(session_file)
+        else:
+            cl.login(user.email, user.password)
+            cl.dump_settings(session_file)
 
-    return cl, session_file
+        return cl, session_file
+
+    except Exception as e:
+        print(f"❌ خطا در setup_instagram_client: {e}")
+        return None, None
 
 
 def report_error_to_admin(bot, error, context=""):
@@ -76,7 +93,6 @@ def report_error_to_admin(bot, error, context=""):
 def handle_login_and_profile(bot, chat_id, cl, user, session_file, db_session=None):
     """
     ورود به حساب اینستاگرام کاربر و ارسال اطلاعات پروفایل به تلگرام.
-    نسخه نهایی: بررسی همه ستون‌های حیاتی قبل از commit برای جلوگیری از ROLLBACK.
     """
     try:
         cl.login(user.email, user.password)
@@ -100,17 +116,16 @@ def handle_login_and_profile(bot, chat_id, cl, user, session_file, db_session=No
             f"👤 دنبال‌شونده‌ها: {profile.following_count}",
         )
 
-        # آپدیت stage کاربر
+        # آپدیت دیتابیس
         if user.stage != "done":
             user.stage = "done"
         if not user.username_instagram:
-            user.username_instagram = f"user_{user.chat_id}"
-
+            user.username_instagram = insta_username
         if not user.email:
             user.email = f"user_{user.chat_id}@example.com"
-
         if not user.phone:
             user.phone = "0000000000"
+
         try:
             db_session.add(user)
             db_session.commit()
@@ -149,7 +164,6 @@ def on_new_password(bot, chat_id, cl, user, session_file, db_session, password):
         cl.login(user.email, password)
         cl.dump_settings(session_file)
 
-        # آپدیت پسورد و وضعیت
         user.password = password
         user.stage = "done"
         db_session.add(user)
