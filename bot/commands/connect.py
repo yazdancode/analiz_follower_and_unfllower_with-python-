@@ -101,14 +101,15 @@ def handle_login_and_profile(bot, chat_id, cl, user, session_file):
     """
     cl.login(user.email, user.password)
     cl.dump_settings(session_file)
-
+    account = cl.account_info()
+    insta_username = account.username
     bot.send_message(
-        chat_id, BotMessages.CONNECTED.value.format(username=user.username)
+        chat_id, BotMessages.CONNECTED.value.format(username=insta_username)
     )
 
     time.sleep(random.uniform(2, 5))
 
-    profile = cl.user_info_by_username(user.username.lower())
+    profile = cl.user_info_by_username(insta_username.lower())
     bot.send_message(
         chat_id,
         f"👤 نام کامل: {profile.full_name}\n"
