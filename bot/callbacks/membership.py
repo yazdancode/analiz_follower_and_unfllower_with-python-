@@ -12,7 +12,7 @@ from db.models import User
 
 CHANNEL_ID = config("CHANNEL_ID")
 load_dotenv()
-ADMIN_CHAT_IDS = int(os.environ.get("ADMIN_CHAT_IDS"))
+ADMIN_CHAT_IDS = [int(os.environ.get("ADMIN_CHAT_IDS"))]
 
 
 def check_membership(bot, chat_id):

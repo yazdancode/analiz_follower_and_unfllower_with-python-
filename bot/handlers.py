@@ -37,7 +37,16 @@ def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["connect"])
     def handle_connect(message):
         chat_id = message.chat.id
-        InstagramManager.get_user_from_db(bot, chat_id)
+        manager = InstagramManager()
+        cl, session_file, user = manager.get_user_from_db(bot, chat_id)
+        if not user or not cl:
+            return
+        if not manager.send_login_stage_messages(bot, chat_id, user):
+            return
+        try:
+            manager.handle_login_and_profile(bot, chat_id, cl, user, session_file)
+        except Exception as e:
+            manager.handle_login_errors(bot, chat_id, e, cl)
 
     # /help
     @bot.message_handler(commands=["help"])
