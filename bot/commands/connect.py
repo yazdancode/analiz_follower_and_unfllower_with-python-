@@ -20,7 +20,7 @@ from db.models import User
 
 load_dotenv()
 
-ADMIN_CHAT_IDS = int(os.environ.get("ADMIN_CHAT_IDS"))
+ADMIN_CHAT_IDS = [int(os.environ.get("ADMIN_CHAT_IDS"))]
 logging.basicConfig(level=logging.INFO)
 
 
