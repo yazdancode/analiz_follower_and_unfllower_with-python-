@@ -15,6 +15,8 @@ def set_bot_commands(bot: telebot.TeleBot):
             telebot.types.BotCommand("start", "شروع ربات"),
             telebot.types.BotCommand("login", "ورود به حساب کاربری"),
             telebot.types.BotCommand("connect", "اتصال به اینستاگرام"),
+            telebot.types.BotCommand("remove_account", "حذف حساب کاربری"),
+            telebot.types.BotCommand("logout", "خروج از حساب کاربری"),
             telebot.types.BotCommand("help", "نمایش راهنما"),
         ]
     )

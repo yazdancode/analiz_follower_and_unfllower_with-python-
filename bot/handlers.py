@@ -1,8 +1,8 @@
 from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
-from bot.commands.connect import InstagramManager
 from bot.commands.help import help_handler
+from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.start import start_handler
 
@@ -36,24 +36,24 @@ def register_handlers(bot: TeleBot):
     # /connect
     @bot.message_handler(commands=["connect"])
     def handle_connect(message):
-        chat_id = message.chat.id
-        manager = InstagramManager()
-        cl, session_file, user = manager.get_user_from_db(bot, chat_id)
-        if not user or not cl:
-            return
-        if not manager.send_login_stage_messages(bot, chat_id, user):
-            return
-        try:
-            manager.handle_login_and_profile(bot, chat_id, cl, user, session_file)
-        except Exception as e:
-            manager.handle_login_errors(bot, chat_id, e, cl)
+        connect_instagram(bot, message)
 
     # /help
     @bot.message_handler(commands=["help"])
     def handle_help(message):
         help_handler(bot, message)
 
-    # تایید عضویت
+    # /logout
+    @bot.message_handler(commands=["logout"])
+    def handle_logout(message):
+        pass
+
+    # /remove_account
+    @bot.message_handler(commands=["remove_account"])
+    def remove_account(message):
+        pass
+
+    # ok join
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
     def handle_membership(call):
         confirm_membership(bot, call)
@@ -61,11 +61,9 @@ def register_handlers(bot: TeleBot):
     # پیام‌های ناشناخته یا متنی
     @bot.message_handler(func=lambda m: True)
     def handle_message(message):
-        if not message.text:  # جلوگیری از خطا در پیام‌های غیرمتنی
+        if not message.text:
             return
 
         if message.text.startswith("/"):
-            return  # دستور ناشناخته → فعلاً نادیده گرفته می‌شود
-
-        # پیام متنی معمولی → هدایت به ورود
+            return
         login_command(bot, message)

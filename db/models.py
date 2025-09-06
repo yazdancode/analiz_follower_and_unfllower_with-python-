@@ -24,4 +24,5 @@ class User(BaseModel, table=True):
     email: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
+    is_active: Optional[bool] = True
     stage: str = "start"

@@ -8,11 +8,13 @@ def help_handler(bot, message: Message):
     پیام راهنما را با فرمت HTML (بدون CSS) برای کاربر ارسال می‌کند.
     """
     text = (
-        "<b>📖 راهنمای ربات</b>\n"
+        "<b>📖 راهنمای ربات</b>\n\n"
         "<u>دستورات موجود:</u>\n\n"
         "• <code>/start</code> — شروع کار با ربات\n"
         "• <code>/login</code> — ورود به حساب کاربری\n"
         "• <code>/connect</code> — اتصال به اینستاگرام\n"
+        "• <code>/remove_account</code> — حذف حساب کاربری\n"
+        "• <code>/logout_account</code> — خروج از حساب کاربری\n"
         "• <code>/help</code> — نمایش همین راهنما\n"
     )
 
