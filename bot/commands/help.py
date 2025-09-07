@@ -13,8 +13,8 @@ def help_handler(bot, message: Message):
         "• <code>/start</code> — شروع کار با ربات\n"
         "• <code>/login</code> — ورود به حساب کاربری\n"
         "• <code>/connect</code> — اتصال به اینستاگرام\n"
-        "• <code>/remove_account</code> — حذف حساب کاربری\n"
-        "• <code>/logout_account</code> — خروج از حساب کاربری\n"
+        "• <code>/remove</code> — حذف حساب کاربری\n"
+        "• <code>/logout</code> — خروج از حساب کاربری\n"
         "• <code>/help</code> — نمایش همین راهنما\n"
     )
 

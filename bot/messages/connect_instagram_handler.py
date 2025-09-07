@@ -15,18 +15,13 @@ def connect_instagram(bot, message: Message, proxy: str | None = None):
     cl, session_file, user = manager.get_user_from_db(bot, chat_id, proxy)
     if not user or not cl:
         return
-
-    # بررسی stage کاربر
     if not manager.send_login_stage_messages(bot, chat_id, user):
         return
 
     try:
-        # ورود و نمایش اطلاعات پروفایل
         stage_result = manager.handle_login_and_profile(
             bot, chat_id, cl, user, session_file
         )
-
-        # اگر login موفق بود، stage دوباره "done" شود
         if stage_result is None:
             with get_session() as db_session:
                 db_user = db_session.get(User, user.id)

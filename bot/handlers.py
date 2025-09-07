@@ -52,7 +52,7 @@ def register_handlers(bot: TeleBot):
     # /remove_account
     @bot.message_handler(commands=["remove"])
     def remove_account(message):
-        pass
+        remove_account(bot, message)
 
     # ok join
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
