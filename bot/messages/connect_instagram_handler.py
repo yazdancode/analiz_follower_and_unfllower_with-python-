@@ -7,8 +7,8 @@ from db.models import User
 
 def connect_instagram(bot, message: Message, proxy: str | None = None):
     """
-    اتصال به حساب کاربری اینستاگرام با استفاده از اطلاعات ذخیره‌شده کاربر
-    و ارسال پیام‌های مرحله‌ای ورود.
+    اتصال ساده به حساب کاربری اینستاگرام:
+    ✅ فقط پیام موفقیت و ذخیره username در دیتابیس
     """
     chat_id = message.chat.id
     manager = InstagramManager()
@@ -19,16 +19,19 @@ def connect_instagram(bot, message: Message, proxy: str | None = None):
         return
 
     try:
-        stage_result = manager.handle_login_and_profile(
-            bot, chat_id, cl, user, session_file
+        account = cl.account_info()
+        insta_username = account.username
+        with get_session() as db_session:
+            db_user = db_session.get(User, user.id)
+            if db_user:
+                db_user.stage = "done"
+                db_user.username_instagram = insta_username
+                db_session.commit()
+        bot.send_message(
+            chat_id,
+            f"✅ اینستاگرام شما متصل شد!\n" f"👤 نام کاربری: <b>{insta_username}</b>",
+            parse_mode="HTML",
         )
-        if stage_result is None:
-            with get_session() as db_session:
-                db_user = db_session.get(User, user.id)
-                if user.stage != "done":
-                    user.stage = "done"
-                    db_session.add(db_user)
-                    db_session.commit()
 
     except Exception as e:
         manager.handle_login_errors(bot, chat_id, e, cl)

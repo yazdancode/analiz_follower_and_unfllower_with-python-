@@ -2,6 +2,8 @@ from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
 from bot.commands.help import help_handler
+from bot.commands.profile_account import profile
+from bot.commands.remove_account import remove_account
 from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.logout import logout_handler
@@ -51,13 +53,15 @@ def register_handlers(bot: TeleBot):
 
     # /remove_account
     @bot.message_handler(commands=["remove"])
-    def remove_account(message):
+    def remove(message):
         remove_account(bot, message)
 
+    # /account
     @bot.message_handler(commands=["account"])
     def account(message):
-        pass
+        profile(bot, message)
 
+    # /change_password
     @bot.message_handler(commands=["change_password"])
     def change_password(message):
         pass
