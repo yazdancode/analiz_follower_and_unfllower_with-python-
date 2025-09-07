@@ -2,6 +2,7 @@ from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
 from bot.commands.help import help_handler
+from bot.commands.password_change import change_password_request, update_password
 from bot.commands.profile_account import profile
 from bot.commands.remove_account import remove_account
 from bot.messages.connect_instagram_handler import connect_instagram
@@ -64,14 +65,18 @@ def register_handlers(bot: TeleBot):
     # /change_password
     @bot.message_handler(commands=["change_password"])
     def change_password(message):
-        pass
+        change_password_request(bot, message)
 
-    # ok join
+    @bot.message_handler(func=lambda m: True)
+    def handle_text_messages(message):
+        update_password(bot, message)
+
+        # ok join
+
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
     def handle_membership(call):
         confirm_membership(bot, call)
 
-    # پیام‌های ناشناخته یا متنی
     @bot.message_handler(func=lambda m: True)
     def handle_message(message):
         if not message.text:
