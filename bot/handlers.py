@@ -54,6 +54,14 @@ def register_handlers(bot: TeleBot):
     def remove_account(message):
         remove_account(bot, message)
 
+    @bot.message_handler(commands=["account"])
+    def account(message):
+        pass
+
+    @bot.message_handler(commands=["change_password"])
+    def change_password(message):
+        pass
+
     # ok join
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
     def handle_membership(call):

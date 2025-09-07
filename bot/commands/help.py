@@ -15,6 +15,8 @@ def help_handler(bot, message: Message):
         "• <code>/connect</code> — اتصال به اینستاگرام\n"
         "• <code>/remove</code> — حذف حساب کاربری\n"
         "• <code>/logout</code> — خروج از حساب کاربری\n"
+        "• <code>/account</code> — نمایش اطلاعات حساب کاربری\n"
+        "• <code>/change_password</code> — تغییر رمز عبور اینستاگرام\n"
         "• <code>/help</code> — نمایش همین راهنما\n"
     )
 
