@@ -2,9 +2,11 @@ from telebot import TeleBot
 
 from bot.callbacks.membership import confirm_membership
 from bot.commands.help import help_handler
+from bot.commands.login import get_user
 from bot.commands.password_change import change_password_request, update_password
-from bot.commands.profile_account import analyze_command, profile
+from bot.commands.profile_account import analyze_follower, profile
 from bot.commands.remove_account import remove_account
+from bot.enum import BotMessages
 from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.logout import logout_handler
@@ -67,13 +69,22 @@ def register_handlers(bot: TeleBot):
     def change_password(message):
         change_password_request(bot, message)
 
-    @bot.message_handler(commands=["analyze"])
+    @bot.message_handler(commands=["analyze_follower"])
     def analyze(message):
-        analyze_command(message, bot)
+        analyze_follower(message, bot)
 
     @bot.message_handler(func=lambda m: True)
     def handle_text_messages(message):
-        update_password(bot, message)
+        chat_id = message.chat.id
+        # text = message.text.strip()
+        user, session = get_user(chat_id)
+        if not user:
+            bot.send_message(chat_id, BotMessages.USER_NOT_FOUND.value)
+            return
+        if user.stage == "waiting_new_password":
+            update_password(bot, message)
+            return
+        login_command(bot, message)
 
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
     def handle_membership(call):

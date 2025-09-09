@@ -54,3 +54,4 @@ class BotMessages(Enum):
     PASSWORD_SAVED = "✅ اطلاعات شما کامل ثبت شد. ممنون که همراه ما هستید!"
     USER_NOT_FOUND = "❌ ابتدا باید عضو کانال شوید و /start را بزنید."
     PASSWORD_CHANGED = "❌ پسورد شما تغییر کرده است. لطفاً پسورد جدید را وارد کنید:"
+    ERROR_DATABASE = "❌ خطا در اتصال به دیتابیس."

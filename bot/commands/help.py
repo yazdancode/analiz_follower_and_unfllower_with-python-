@@ -5,19 +5,22 @@ def help_handler(bot, message: Message):
     """
     هندلر دستور /help برای ربات تلگرام.
 
-    پیام راهنما را با فرمت HTML (بدون CSS) برای کاربر ارسال می‌کند.
+    پیام راهنما را با فرمت HTML برای کاربر ارسال می‌کند.
     """
-    text = (
-        "<b>📖 راهنمای ربات</b>\n\n"
-        "<u>دستورات موجود:</u>\n\n"
-        "• <code>/start</code> — شروع کار با ربات\n"
-        "• <code>/login</code> — ورود به حساب کاربری\n"
-        "• <code>/connect</code> — اتصال به اینستاگرام\n"
-        "• <code>/remove</code> — حذف حساب کاربری\n"
-        "• <code>/logout</code> — خروج از حساب کاربری\n"
-        "• <code>/account</code> — نمایش اطلاعات حساب کاربری\n"
-        "• <code>/change_password</code> — تغییر رمز عبور اینستاگرام\n"
-        "• <code>/help</code> — نمایش همین راهنما\n"
-    )
+    commands = [
+        ("/start", "شروع کار با ربات"),
+        ("/login", "ورود به حساب کاربری"),
+        ("/connect", "اتصال به اینستاگرام"),
+        ("/remove", "حذف حساب کاربری"),
+        ("/logout", "خروج از حساب کاربری"),
+        ("/account", "نمایش اطلاعات حساب کاربری"),
+        ("/change_password", "تغییر رمز عبور اینستاگرام"),
+        ("/analiz-follower", "تحلیل فالوورهای حساب کاربری"),  # ← اضافه شد
+        ("/help", "نمایش همین راهنما"),
+    ]
 
-    bot.reply_to(message, text, parse_mode="HTML")
+    text = "<b>📖 راهنمای ربات</b>\n\n<u>دستورات موجود:</u>\n\n"
+    for cmd, desc in commands:
+        text += f"• <code>{cmd}</code> — {desc}\n"
+
+    bot.send_message(message.chat.id, text, parse_mode="HTML")

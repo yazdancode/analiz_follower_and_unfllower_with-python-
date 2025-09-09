@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import random
@@ -189,3 +190,52 @@ class InstagramManager:
             bot.send_message(chat_id, "❌ هنوز اطلاعات شما کامل ثبت نشده است.")
             return False
         return True
+
+    @staticmethod
+    def pending_2fa(chat_id):
+        pass
+
+    @staticmethod
+    def analyze_follower(cl, chat_id, bot):
+        """
+        جمع‌آوری فالوورها و ذخیره در JSON با مدیریت Rate Limit اینستاگرام
+        """
+        try:
+            username = cl.account_info().username
+            if not username:
+                bot.send_message(chat_id, "❌ خطا: username کاربر پیدا نشد.")
+                return
+            user_id = cl.user_id_from_username(username)
+            followers = cl.user_followers(user_id)
+            followers_data = {}
+            for uname, user in followers.items():
+                followers_data[uname] = {
+                    "pk": user.pk,
+                    "full_name": user.full_name,
+                    "is_private": user.is_private,
+                    "profile_pic_url": user.profile_pic_url,
+                }
+                time.sleep(random.uniform(0.5, 1.5))
+            os.makedirs("data", exist_ok=True)
+            file_path = f"data/{username}_followers.json"
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(followers_data, f, ensure_ascii=False, indent=4)
+
+            bot.send_message(
+                chat_id, f"✅ تعداد {len(followers_data)} فالوور جمع‌آوری و ذخیره شد."
+            )
+
+        except Exception as e:
+            error_msg = str(e)
+            if "Please wait a few minutes" in error_msg:
+                bot.send_message(
+                    chat_id,
+                    "⏳ اینستاگرام تعداد درخواست‌ها را محدود کرده، لطفاً چند دقیقه صبر کنید و دوباره تلاش کنید.",
+                )
+            else:
+                bot.send_message(chat_id, f"❌ خطا در جمع‌آوری فالوورها: {error_msg}")
+
+    @staticmethod
+    def analyze_following():
+        # todo: mikham col following begireh savin to json with username
+        pass

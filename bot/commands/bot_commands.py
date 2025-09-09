@@ -20,5 +20,6 @@ def set_bot_commands(bot: telebot.TeleBot):
             telebot.types.BotCommand("help", "نمایش راهنما"),
             telebot.types.BotCommand("account", "نمایش اطلاعات حساب کاربر"),
             telebot.types.BotCommand("change_password", "تغییر رمز عبور اینستاگرام"),
+            telebot.types.BotCommand("analyze_follower", "تحلیل فالوورهای اینستاگرام"),
         ]
     )

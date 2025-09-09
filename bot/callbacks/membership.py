@@ -63,7 +63,7 @@ def confirm_membership(bot, call: CallbackQuery):
     user, session = get_existing_user(chat_id)
 
     if session is None:
-        bot.send_message(chat_id, "❌ خطا در اتصال به دیتابیس.")
+        bot.send_message(chat_id, BotMessages.ERROR_DATABASE.value)
         return
 
     if user and not is_member:

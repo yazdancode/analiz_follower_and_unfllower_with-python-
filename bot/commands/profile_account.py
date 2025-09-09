@@ -11,5 +11,8 @@ def profile(bot, message):
     manager.handle_login_and_profile(bot, chat_id, cl, user, session_file)
 
 
-def analyze_command(message, bot):
-    pass
+def analyze_follower(message, bot):
+    chat_id = message.chat.id
+    manager = InstagramManager()
+    cl, session_file, user = manager.get_user_from_db(bot, chat_id)
+    manager.analyze_follower(cl, chat_id, bot)
