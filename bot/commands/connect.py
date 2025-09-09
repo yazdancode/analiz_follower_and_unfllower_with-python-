@@ -237,5 +237,5 @@ class InstagramManager:
 
     @staticmethod
     def analyze_following():
-        # todo: mikham col following begireh savin to json with username
+        """"""
         pass
