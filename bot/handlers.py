@@ -3,7 +3,7 @@ from telebot import TeleBot
 from bot.callbacks.membership import confirm_membership
 from bot.commands.help import help_handler
 from bot.commands.password_change import change_password_request, update_password
-from bot.commands.profile_account import profile
+from bot.commands.profile_account import analyze_command, profile
 from bot.commands.remove_account import remove_account
 from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
@@ -66,6 +66,10 @@ def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["change_password"])
     def change_password(message):
         change_password_request(bot, message)
+
+    @bot.message_handler(commands=["analyze"])
+    def analyze(message):
+        analyze_command(message, bot)
 
     @bot.message_handler(func=lambda m: True)
     def handle_text_messages(message):

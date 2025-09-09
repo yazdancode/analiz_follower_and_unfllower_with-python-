@@ -9,3 +9,7 @@ def profile(bot, message):
     if not cl or not user:
         return
     manager.handle_login_and_profile(bot, chat_id, cl, user, session_file)
+
+
+def analyze_command(message, bot):
+    pass
