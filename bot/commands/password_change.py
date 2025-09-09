@@ -10,7 +10,6 @@ def change_password_request(bot, message):
         bot.send_message(chat_id, BotMessages.USER_NOT_FOUND.value)
         return
 
-    # پیام به کاربر برای وارد کردن پسورد جدید
     bot.send_message(chat_id, "📝 لطفاً پسورد جدید خود را وارد کنید.\n")
     user.stage = "waiting_new_password"
     session.add(user)
@@ -29,7 +28,7 @@ def update_password(bot, message):
     if user.stage != "waiting_new_password":
         bot.send_message(chat_id, "❌ لطفاً ابتدا دستور /change_password را ارسال کنید.")
         return
-    if len(text) > 14:
+    if len(text) > 15:
         bot.send_message(chat_id, BotMessages.PASSWORD_TOO_SHORT.value)
         return
     if not any(c.islower() for c in text):

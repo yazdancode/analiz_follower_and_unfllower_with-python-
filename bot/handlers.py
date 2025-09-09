@@ -71,8 +71,6 @@ def register_handlers(bot: TeleBot):
     def handle_text_messages(message):
         update_password(bot, message)
 
-        # ok join
-
     @bot.callback_query_handler(func=lambda call: call.data == "confirm_membership")
     def handle_membership(call):
         confirm_membership(bot, call)
