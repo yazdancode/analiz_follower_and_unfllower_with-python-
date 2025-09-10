@@ -1,6 +1,6 @@
 from telebot.types import Message
 
-from bot.enum import BotMessages
+from bot.constants import BotMessages
 from bot.keyboard import create_inline_keyboard
 
 

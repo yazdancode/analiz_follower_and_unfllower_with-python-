@@ -15,7 +15,7 @@ from instagrapi.exceptions import (
 )
 from sqlmodel import select
 
-from bot.enum import BotMessages
+from bot.constants import BotMessages
 from db.database import get_session
 from db.models import Follower, FollowingUser, User
 

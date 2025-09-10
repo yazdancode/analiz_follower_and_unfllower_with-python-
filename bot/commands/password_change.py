@@ -1,4 +1,4 @@
-from bot.enum import BotMessages
+from bot.constants import BotMessages
 from bot.messages.login_handler import get_user
 
 

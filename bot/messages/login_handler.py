@@ -7,7 +7,7 @@ from bot.commands.login import (
     handle_phone_stage,
     update_username_if_needed,
 )
-from bot.enum import BotMessages
+from bot.constants import BotMessages
 
 
 def login_command(bot, message: Message):

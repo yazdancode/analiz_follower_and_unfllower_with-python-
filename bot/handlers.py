@@ -6,7 +6,7 @@ from bot.commands.login import get_user
 from bot.commands.password_change import change_password_request, update_password
 from bot.commands.profile_account import analyze_follower, profile
 from bot.commands.remove_account import remove_account
-from bot.enum import BotMessages
+from bot.constants import BotMessages
 from bot.messages.connect_instagram_handler import connect_instagram
 from bot.messages.login_handler import login_command
 from bot.messages.logout import logout_handler
