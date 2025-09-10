@@ -403,3 +403,20 @@ class InstagramManager:
 
         except Exception as e:
             bot.send_message(chat_id, f"❌ خطا در unfollow_nonfollowers: {e}")
+
+    def login_with_2fa(self, bot, chat_id, cl, user, verification_code):
+        """"""
+        try:
+            cl.login(user.email, user.password, verification_code=verification_code)
+            safe_username = "".join(
+                c
+                for c in (user.username or f"user_{user.chat_id}").lower()
+                if c.isalnum() or c in ("_", "-")
+            )
+            session_file = f"sessions/{safe_username}.json"
+            cl.dump_settings(session_file)
+            bot.send_message(chat_id, "✅ ورود با ۲FA موفق بود!")
+            return True
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ خطا در ورود با ۲FA: {e}")
+            return False
