@@ -15,4 +15,11 @@ def analyze_follower(message, bot):
     chat_id = message.chat.id
     manager = InstagramManager()
     cl, session_file, user = manager.get_user_from_db(bot, chat_id)
-    manager.analyze_follower(cl, chat_id, bot)
+    manager.analyze_connections(cl, chat_id, bot, mode="followers")
+
+
+def analyze_following(message, bot):
+    chat_id = message.chat.id
+    manager = InstagramManager()
+    cl, session_file, user = manager.get_user_from_db(bot, chat_id)
+    manager.analyze_connections(cl, chat_id, bot, mode="following")

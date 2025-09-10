@@ -73,10 +73,13 @@ def register_handlers(bot: TeleBot):
     def analyze(message):
         analyze_follower(message, bot)
 
+    @bot.message_handler(commands=["analyze_following"])
+    def analyze_following(message):
+        analyze_following(message, bot)
+
     @bot.message_handler(func=lambda m: True)
     def handle_text_messages(message):
         chat_id = message.chat.id
-        # text = message.text.strip()
         user, session = get_user(chat_id)
         if not user:
             bot.send_message(chat_id, BotMessages.USER_NOT_FOUND.value)

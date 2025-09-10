@@ -17,7 +17,7 @@ from sqlmodel import select
 
 from bot.enum import BotMessages
 from db.database import get_session
-from db.models import User
+from db.models import Follower, FollowingUser, User
 
 load_dotenv()
 ADMIN_CHAT_IDS = [int(os.environ.get("ADMIN_CHAT_IDS"))]
@@ -160,7 +160,6 @@ class InstagramManager:
                 except Exception as e:
                     bot.send_message(chat_id, f"⚠️ خطا در logout واقعی: {e}")
 
-            # پاکسازی session و آپدیت stage با session جدید
             if is_action and os.path.exists(session_file):
                 os.remove(session_file)
                 with get_session() as db_session:
@@ -180,9 +179,7 @@ class InstagramManager:
 
     @staticmethod
     def send_login_stage_messages(bot, chat_id, user):
-        """
-        بررسی وضعیت ثبت‌نام کاربر و ارسال پیام مناسب در صورت ناقص بودن اطلاعات.
-        """
+        """بررسی وضعیت ثبت‌نام کاربر و ارسال پیام مناسب در صورت ناقص بودن اطلاعات."""
         if not user:
             bot.send_message(chat_id, "❌ لطفاً ابتدا login کنید")
             return False
@@ -192,37 +189,70 @@ class InstagramManager:
         return True
 
     @staticmethod
-    def pending_2fa(chat_id):
-        pass
-
-    @staticmethod
-    def analyze_follower(cl, chat_id, bot):
-        """
-        جمع‌آوری فالوورها و ذخیره در JSON با مدیریت Rate Limit اینستاگرام
-        """
+    def analyze_connections(cl, chat_id, bot, mode="followers"):
+        """جمع‌آوری لیست فالوورها یا فالوئینگ‌ها و ذخیره در JSON و دیتابیس"""
         try:
             username = cl.account_info().username
             if not username:
                 bot.send_message(chat_id, "❌ خطا: username کاربر پیدا نشد.")
                 return
+
             user_id = cl.user_id_from_username(username)
-            followers = cl.user_followers(user_id)
-            followers_data = {}
-            for uname, user in followers.items():
-                followers_data[uname] = {
-                    "pk": user.pk,
-                    "full_name": user.full_name,
-                    "is_private": user.is_private,
-                    "profile_pic_url": user.profile_pic_url,
-                }
-                time.sleep(random.uniform(0.5, 1.5))
+            if mode == "followers":
+                connections = cl.user_followers(user_id)
+                label = "فالوور"
+            elif mode == "following":
+                connections = cl.user_following(user_id)
+                label = "دنبال‌شونده"
+            else:
+                bot.send_message(
+                    chat_id, "❌ حالت نامعتبر است (followers یا following)."
+                )
+                return
+
+            connections_data = {}
+            with get_session() as db_session:
+                for uname, user in connections.items():
+                    connections_data[uname] = {
+                        "pk": user.pk,
+                        "full_name": user.full_name,
+                        "is_private": user.is_private,
+                        "profile_pic_url": user.profile_pic_url,
+                    }
+
+                    if mode == "followers":
+                        db_session.add(
+                            Follower(
+                                chat_id=chat_id,
+                                username=uname,
+                                pk=user.pk,
+                                full_name=user.full_name,
+                                is_private=user.is_private,
+                                profile_pic_url=user.profile_pic_url,
+                            )
+                        )
+                    else:
+                        db_session.add(
+                            FollowingUser(
+                                chat_id=chat_id,
+                                username=uname,
+                                pk=user.pk,
+                                full_name=user.full_name,
+                                is_private=user.is_private,
+                                profile_pic_url=user.profile_pic_url,
+                            )
+                        )
+                    time.sleep(random.uniform(0.5, 1.5))
+
+                db_session.commit()
             os.makedirs("data", exist_ok=True)
-            file_path = f"data/{username}_followers.json"
+            file_path = f"data/{username}_{mode}.json"
             with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(followers_data, f, ensure_ascii=False, indent=4)
+                json.dump(connections_data, f, ensure_ascii=False, indent=4)
 
             bot.send_message(
-                chat_id, f"✅ تعداد {len(followers_data)} فالوور جمع‌آوری و ذخیره شد."
+                chat_id,
+                f"✅ تعداد {len(connections_data)} {label} جمع‌آوری و ذخیره شد.",
             )
 
         except Exception as e:
@@ -233,9 +263,143 @@ class InstagramManager:
                     "⏳ اینستاگرام تعداد درخواست‌ها را محدود کرده، لطفاً چند دقیقه صبر کنید و دوباره تلاش کنید.",
                 )
             else:
-                bot.send_message(chat_id, f"❌ خطا در جمع‌آوری فالوورها: {error_msg}")
+                bot.send_message(chat_id, f"❌ خطا در جمع‌آوری {mode}: {error_msg}")
 
     @staticmethod
-    def analyze_following():
-        """"""
-        pass
+    def analyze_unfollowers_from_db(chat_id, bot):
+        """بررسی آنفالو و فالو بک از دیتابیس"""
+        try:
+            with get_session() as db_session:
+                followers = db_session.query(Follower).all()
+                following = db_session.query(FollowingUser).all()
+
+                followers_set = {f.pk for f in followers if f.pk}
+                following_set = {f.pk for f in following if f.pk}
+
+                nonfollowers = following_set - followers_set
+                not_following_back = followers_set - following_set
+
+                msg = (
+                    f"📊 تحلیل دیتابیس:\n\n"
+                    f"❌ کسانی که فالو کردی ولی تورو فالو نکردن: {len(nonfollowers)} نفر\n"
+                    f"👤 کسانی که فالو کردن ولی فالو بک نکردی: {len(not_following_back)} نفر\n"
+                    f"🤝 فالو بک کامل: {len(followers_set & following_set)} نفر"
+                )
+                bot.send_message(chat_id, msg)
+
+                preview_nonfollowers = list(nonfollowers)[:10]
+                preview_not_following_back = list(not_following_back)[:10]
+
+                if preview_nonfollowers:
+                    bot.send_message(
+                        chat_id, f"🔻 نمونه unfollow: {preview_nonfollowers}"
+                    )
+                if preview_not_following_back:
+                    bot.send_message(
+                        chat_id,
+                        f"🔻 نمونه not-following-back: {preview_not_following_back}",
+                    )
+
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ خطا در بررسی دیتابیس: {e}")
+
+    @staticmethod
+    def follow_nonfollowers(cl, chat_id, bot, limit: int = 10):
+        """فالو بک کردن کسانی که تورو فالو کردن ولی تو هنوز فالو نکردی"""
+        try:
+            with get_session() as db_session:
+                followers = db_session.query(Follower).all()
+                following = db_session.query(FollowingUser).all()
+
+                followers_set = {f.pk for f in followers if f.pk}
+                following_set = {f.pk for f in following if f.pk}
+
+                follow_back_candidates = list(followers_set - following_set)
+
+                if not follow_back_candidates:
+                    bot.send_message(chat_id, "✅ همه فالو بک شدن! کسی باقی نمونده.")
+                    return
+
+                success = 0
+                failed = 0
+
+                for user_pk in follow_back_candidates[:limit]:
+                    try:
+                        cl.user_follow(user_pk)
+                        # ذخیره در دیتابیس بعد از فالو
+                        db_session.add(FollowingUser(chat_id=chat_id, pk=user_pk))
+                        db_session.commit()
+
+                        success += 1
+                        bot.send_message(chat_id, f"👥 فالو شد: {user_pk}")
+                        time.sleep(random.uniform(3, 6))
+                    except Exception as e:
+                        failed += 1
+                        bot.send_message(chat_id, f"⚠️ خطا در فالو {user_pk}: {e}")
+                        time.sleep(random.uniform(5, 8))
+
+                bot.send_message(
+                    chat_id,
+                    f"📊 عملیات فالو بک تمام شد.\n"
+                    f"✅ موفق: {success}\n"
+                    f"❌ ناموفق: {failed}\n"
+                    f"🔢 باقی‌مانده: {len(follow_back_candidates) - success - failed}",
+                )
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ خطا در follow_nonfollowers: {e}")
+
+    @staticmethod
+    def unfollow_nonfollowers(cl, chat_id, bot, limit: int = 10):
+        """
+        آنفالو کردن کسانی که فالو کردی ولی تورو فالو نکردن
+        limit = تعداد آنفالو در هر بار اجرا
+        """
+        try:
+            with get_session() as db_session:
+                followers = db_session.query(Follower).all()
+                following = db_session.query(FollowingUser).all()
+
+                followers_set = {f.pk for f in followers if f.pk}
+                following_set = {f.pk for f in following if f.pk}
+                unfollow_candidates = list(following_set - followers_set)
+
+                if not unfollow_candidates:
+                    bot.send_message(
+                        chat_id, "✅ همه کسانی که فالو کردی، تورو فالو کردند!"
+                    )
+                    return
+
+                success = 0
+                failed = 0
+
+                for user_pk in unfollow_candidates[:limit]:
+                    try:
+                        cl.user_unfollow(user_pk)
+                        # حذف از دیتابیس پس از آنفالو
+                        db_entry = (
+                            db_session.query(FollowingUser)
+                            .filter_by(pk=user_pk, chat_id=chat_id)
+                            .first()
+                        )
+                        if db_entry:
+                            db_session.delete(db_entry)
+                            db_session.commit()
+
+                        success += 1
+                        bot.send_message(chat_id, f"❌ آنفالو شد: {user_pk}")
+                        time.sleep(random.uniform(3, 6))  # جلوگیری از بلاک شدن
+                    except Exception as e:
+                        failed += 1
+                        bot.send_message(chat_id, f"⚠️ خطا در آنفالو {user_pk}: {e}")
+                        time.sleep(random.uniform(5, 8))
+
+                bot.send_message(
+                    chat_id,
+                    f"📊 عملیات آنفالو تمام شد.\n"
+                    f"✅ موفق: {success}\n"
+                    f"❌ ناموفق: {failed}\n"
+                    f"🔢 باقی‌مانده: {len(unfollow_candidates) - success - failed}",
+                )
+
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ خطا در unfollow_nonfollowers: {e}")
